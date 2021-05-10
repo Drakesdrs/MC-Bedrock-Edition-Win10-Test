@@ -44,6 +44,17 @@ struct Vec3 {
 	Vec3(float x = 0, float y = 0, float z = 0) { this->x = x; this->y = y; this->z = z; };
 };
 
+struct Vec3_i {
+	union {
+		struct {
+			int x, y, z;
+		};
+		int arr[3];
+	};
+	Vec3_i() { x = y = 0; };
+	Vec3_i(int x = 0, int y = 0, int z = 0) { this->x = x; this->y = y; this->z = z; };
+};
+
 class Utils {
 public:
 	static HMODULE hModule;

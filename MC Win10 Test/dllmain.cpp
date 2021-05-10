@@ -2,16 +2,38 @@
 
 class ClientInstance {
 public:
-    class Player* GetLocalPlayer() {
+    class Actor* GetLocalPlayer() {
         static unsigned offset = 0;
         if (offset == NULL) {
             offset = *reinterpret_cast<int*>(Utils::FindSig("48 8B 89 ? ? ? ? 48 85 C9 ? ? 33 C0") + 3);
         }
-        return *reinterpret_cast<Player**>((uintptr_t)(this) + offset);
+        return *reinterpret_cast<Actor**>((uintptr_t)(this) + offset);
     }
 };
 
-class Player {
+class GameMode {
+public:
+    class Actor* Player; //0x0008
+
+    virtual void Destructor();
+    virtual void startDestroyBlock(Vec3_i*, UCHAR, bool);
+    virtual void destroyBlock(Vec3_i*, UCHAR);
+    virtual void continueDestroyBlock(Vec3_i*, UCHAR, bool);
+    virtual void stopDestroyBlock(Vec3_i*);
+    virtual void startBuildBlock(Vec3_i*, UCHAR);
+    virtual void buildBlock(Vec3_i*, UCHAR);
+    virtual void continueBuildBlock(Vec3_i*, UCHAR);
+    virtual void stopBuildBlock(void);
+    virtual void tick(void);
+    virtual float getPickRange();
+    virtual void useItem();
+    virtual void useItemOn();
+    virtual void interact(Actor*, Vec3*);
+    virtual void attack(Actor*);
+    virtual void releaseUsingItem();
+};
+
+class Actor {
 public:
     virtual void Function0();
     virtual void Function1();
@@ -28,12 +50,20 @@ public:
     virtual void setPos(Vec3 const&);
 };
 
-Vec3* getVelOfEnt(Player* p) {
+Vec3* getVelOfEnt(Actor* p) {
     static unsigned offset = 0;
     if (offset == NULL) {
         offset = *reinterpret_cast<int*>(Utils::FindSig("F3 0F 10 83 ? ? ? ? F3 0F ? ? ? F3 0F 10 8B ? ? ? ? F3 0F 11 ? ? F3 0F 10 83 ? ? ? ? F3 0F 11 ? ? 48 8B D7") + 3);
     }
     return reinterpret_cast<Vec3*>((uintptr_t)(p)+offset);
+}
+
+GameMode* getGameMode(Actor* p) {
+    static unsigned offset = 0;
+    if (offset == NULL) {
+        offset = *reinterpret_cast<int*>(Utils::FindSig("48 8B BE ? ? ? ? 48 8B 8E ? ? ? ? 48 89 6C ? ? 4C 89"));
+    }
+    return reinterpret_cast<GameMode*>((uintptr_t)(p)+offset);
 }
 
 typedef void(__thiscall* CInstance)(ClientInstance*, void*);
@@ -44,13 +74,18 @@ bool once = false;
 void CInstance_Callback(ClientInstance* cInstance, void* a2) {
     if (!once) {
         Utils::DebugLogOutput("Hooked!");
-        Player* player = cInstance->GetLocalPlayer();
+        Actor* player = cInstance->GetLocalPlayer();
         if (player != nullptr) {
-            Vec3 tpPos = Vec3(0, 50, 0);
+            /*Vec3 tpPos = Vec3(0, 50, 0);
             player->setPos(tpPos);
 
             Vec3* vel = getVelOfEnt(player);
-            vel->y += 2.0f;
+            vel->y += 2.0f;*/
+
+            GameMode* gm = getGameMode(player);
+            if (gm != nullptr && gm->Player == player) {
+                gm->attack(player); //Hit ourself!
+            }
         }
         once = true;
     }
