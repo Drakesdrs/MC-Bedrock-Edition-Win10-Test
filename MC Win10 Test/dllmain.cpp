@@ -28,6 +28,14 @@ public:
     virtual void setPos(Vec3 const&);
 };
 
+Vec3* getVelOfEnt(Player* p) {
+    static unsigned offset = 0;
+    if (offset == NULL) {
+        offset = *reinterpret_cast<int*>(Utils::FindSig("F3 0F 10 83 ? ? ? ? F3 0F ? ? ? F3 0F 10 8B ? ? ? ? F3 0F 11 ? ? F3 0F 10 83 ? ? ? ? F3 0F 11 ? ? 48 8B D7") + 3);
+    }
+    return reinterpret_cast<Vec3*>((uintptr_t)(p)+offset);
+}
+
 typedef void(__thiscall* CInstance)(ClientInstance*, void*);
 CInstance _CInstance;
 
@@ -40,6 +48,9 @@ void CInstance_Callback(ClientInstance* cInstance, void* a2) {
         if (player != nullptr) {
             Vec3 tpPos = Vec3(0, 50, 0);
             player->setPos(tpPos);
+
+            Vec3* vel = getVelOfEnt(player);
+            vel->y += 2.0f;
         }
         once = true;
     }
